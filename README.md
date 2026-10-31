@@ -33,7 +33,7 @@ comportamientos y restricciones de seguridad actuales de Android.
 
 ## Requisitos mínimos
 
-| Requisito | Implementación prevista | Responsables |
+| Requisito | Implementación | Responsables |
 |---|---|---|
 | *Autenticación* | Inicio de sesión del empleado antes de acceder a sus fichajes. | Javier Gómez Barrios |
 | *Almacenamiento local sensible* | Historial de fichajes con fecha, hora, tipo y ubicación. | Julia Hernández Palma |
@@ -45,6 +45,54 @@ comportamientos y restricciones de seguridad actuales de Android.
 - feature/*: desarrollo de funcionalidades.
 - Integración mediante Pull Request.
 - Cada Pull Request debe ser revisado por otro miembro.
+
+## Estado actual del proyecto
+
+La versión actual de FichIN consolida el trabajo realizado en las prácticas P2.2 y P2.3 del Bloque II, con autenticación de usuarios, consulta de fichajes mediante una API remota, persistencia local con Room, listado y pantalla de detalle de los fichajes, acceso a la pantalla de detalle mediante el deep link `fichin://detalle/{id}`, gestión de sesión y limpieza de los datos locales al cerrar sesión, solicitud en tiempo de ejecución del permiso de ubicación.
+
+El modelo principal de la aplicación se ha adaptado al dominio mediante la clase `Fichaje`. El backend común de la asignatura conserva los endpoints `/api/elementos`, por lo que esos nombres se mantienen en la comunicación con el servidor.
+
+## Ejecución del proyecto
+
+## Backend
+
+El backend no se incluye en este repositorio, ya que corresponde al material común proporcionado para las prácticas de la asignatura. Desde la carpeta `backend` del material común puede iniciarse con Python:
+
+### Windows
+
+```bash
+py servidor.py
+```
+
+### macOS / Linux
+
+```bash
+python3 servidor.py
+```
+
+## Ejecución de FichIN
+
+1. Clonar este repositorio.
+2. Abrir el proyecto con Android Studio.
+3. Esperar a que finalice la sincronización de Gradle.
+4. Iniciar el backend común de la asignatura.
+5. Iniciar un emulador Android.
+6. Si la aplicación está configurada para utilizar `http://localhost:8080/`, ejecutar:
+
+```bash
+adb reverse tcp:8080 tcp:8080
+```
+
+7. Ejecutar la aplicación desde Android Studio.
+
+## Usuarios de prueba
+
+El backend común proporciona, entre otros, los siguientes usuarios de prueba:
+
+| Usuario | Contraseña |
+| --- | --- |
+| `ana` | `Practica2024` |
+| `luis` | `Practica2024` |
 
 
 ## Reconocimiento de una aplicación real: Bixpe (com.bixpe.chronos v3.2.74)
