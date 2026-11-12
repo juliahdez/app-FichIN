@@ -81,7 +81,7 @@ object ClienteRed {
          * en la sesión 3.6.
          */
         val registro = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = HttpLoggingInterceptor.Level.BASIC
         }
 
         /*

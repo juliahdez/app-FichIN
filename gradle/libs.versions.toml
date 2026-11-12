@@ -15,6 +15,9 @@ okhttp = "4.12.0"
 serialization = "1.11.0"
 navigation = "2.10.2"
 
+biometria = "1.1.0"
+fragment = "1.8.5"
+
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -47,6 +50,11 @@ androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifec
 androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
 
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
+
+
+biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometria" }
+fragment-ktx = { group = "androidx.fragment", name = "fragment-ktx", version.ref = "fragment" }
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

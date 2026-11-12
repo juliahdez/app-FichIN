@@ -11,6 +11,7 @@ import es.uma.fichin.modelo.EstadoUi
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
+import androidx.compose.runtime.remember
 
 /**
  * Navegación entre pantallas. ESTÁ TERMINADA: no hace falta tocarla en P2.2.
@@ -19,13 +20,14 @@ import androidx.navigation.navDeepLink
  * y se comprobará que la navegación no es un control de seguridad (sesión 2.5.3).
  */
 @Composable
-fun Navegacion(vistaModelo: VistaModelo) {
+fun Navegacion(vistaModelo: VistaModelo, hayDeSesion: Boolean = false) {
     val navController = rememberNavController()
+    val inicio = remember { if (hayDeSesion) "lista" else "login" }
     val estadoLogin by vistaModelo.estadoLogin.collectAsState()
     val estadoLista by vistaModelo.estadoLista.collectAsState()
     val estadoDetalle by vistaModelo.estadoDetalle.collectAsState()
 
-    NavHost(navController = navController, startDestination = "login") {
+    NavHost(navController = navController, startDestination = inicio) {
 
         composable("login") {
             PantallaLogin(
