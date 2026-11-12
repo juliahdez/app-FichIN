@@ -53,7 +53,7 @@ class Repositorio(
                    token desaparece: así demuestras la causa en lugar de
                    suponerla.
                    ---------------------------------------------------------- */
-                Log.d("Repositorio", "Login correcto: $respuesta")
+                Log.d("Repositorio", "Login correcto:")
 
                 sesion.guardarSesion(respuesta.token, respuesta.usuario)
                 EstadoUi.Exito(respuesta)
