@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Paso 2 - Prohibir el trafico sin cifrar.
+     Va en: app/src/main/res/xml/network_security_config.xml -->
+<network-security-config>
+
+    <!-- Se aplica a TODO el trafico de la aplicacion, incluido el de las
+         bibliotecas de terceros. No hay ningun punto de llamada que olvidar. -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+</network-security-config>
