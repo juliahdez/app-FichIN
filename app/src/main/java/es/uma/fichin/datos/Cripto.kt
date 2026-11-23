@@ -13,7 +13,7 @@ import javax.crypto.spec.GCMParameterSpec
    LA CLAVE Y LAS OPERACIONES
    Teoría: sesión 3.3, diapositivas 6, 9 y 12.
 
-   Este fichero es TODO lo que la aplicación sabe de criptografía.
+   Este fichero es TODO lo que la aplicación sabe de criptografía. Fíjate en
    lo que NO hay aquí: en ninguna línea aparece el material de una clave.
    Hay un nombre, unos propósitos, un modo y un tamaño. Nada más.
 

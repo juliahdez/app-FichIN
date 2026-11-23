@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Paso 5 - Aplicar anclaje de certificados.
+     Sustituye al fichero del paso 4. Lo unico que cambia es el bloque
+     <pin-set>: las anclas de confianza siguen siendo las mismas. -->
+<network-security-config>
+
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <domain-config>
+        <!-- 192.168.1.96: la IP de vuestro ordenador en la red local.
+             Ver preparacion/quitar_adb_reverse.txt -->
+        <domain includeSubdomains="true">192.168.1.96</domain>
+
+        <!-- El resumen NO es del certificado: es de su clave publica
+             (SubjectPublicKeyInfo), en SHA-256 y base64. Lo imprime
+             generar_certificado.sh al terminar.
+
+             Cuando llega la fecha de caducidad el anclaje deja de aplicarse
+             y la aplicacion vuelve a la validacion normal. No deja de
+             funcionar: es una valvula de seguridad. -->
+        <pin-set expiration="2026-12-31">
+
+            <!-- Resumen del certificado que esta en uso ahora -->
+            <pin digest="SHA-256">jXz6FkJQXyhvjS08sPAv+rEW7/lelZ3pb1OSbH2bvnE=</pin>
+
+            <!-- Resumen del segundo certificado, el de recambio.
+                 No es opcional: sin el, el dia que la clave cambie la
+                 aplicacion queda inservible y solo se arregla publicando
+                 una version nueva. -->
+            <pin digest="SHA-256">rxF9dOOjCyJ+e8FsyfqUh+vWVRzpiN8B9PX0t4Wcg6g=</pin>
+
+        </pin-set>
+    </domain-config>
+
+</network-security-config>

@@ -50,40 +50,92 @@ comportamientos y restricciones de seguridad actuales de Android.
 
 La versión actual de FichIN consolida el trabajo realizado en las prácticas P2.2 y P2.3 del Bloque II, con autenticación de usuarios, consulta de fichajes mediante una API remota, persistencia local con Room, listado y pantalla de detalle de los fichajes, acceso a la pantalla de detalle mediante el deep link `fichin://detalle/{id}`, gestión de sesión y limpieza de los datos locales al cerrar sesión, solicitud en tiempo de ejecución del permiso de ubicación.
 
+En el Bloque III se han añadido:
+
+- **P3.1 – Datos en reposo:** almacenamiento local cifrado con AES-GCM y clave en el almacén de claves de Android, protegida con autenticación biométrica.
+- **P3.2 – Datos en tránsito:** tráfico en claro prohibido, backend servido por HTTPS y anclaje de la clave pública del servidor. Las excepciones del laboratorio solo existen en la variante de depuración (ver el apartado «Seguridad en tránsito»).
+
 El modelo principal de la aplicación se ha adaptado al dominio mediante la clase `Fichaje`. El backend común de la asignatura conserva los endpoints `/api/elementos`, por lo que esos nombres se mantienen en la comunicación con el servidor.
 
 ## Ejecución del proyecto
 
-## Backend
+Desde P3.2 la aplicación se comunica con el backend **solo por HTTPS** y ya **no se usa `adb reverse`**. Cada miembro tiene que preparar su entorno una vez, siguiendo estos pasos.
 
-El backend no se incluye en este repositorio, ya que corresponde al material común proporcionado para las prácticas de la asignatura. Desde la carpeta `backend` del material común puede iniciarse con Python:
-
-### Windows
+### 1. Averiguar la IP del ordenador
 
 ```bash
-py servidor.py
+ipconfig | findstr /i "IPv4"      # Windows
+hostname -I                       # Linux
+ipconfig getifaddr en0            # macOS
 ```
 
-### macOS / Linux
+Usad la IP de la red local real. Las que terminan en `.1` suelen ser de WSL, VirtualBox o VMware. Si la IP cambia, hay que repetir los pasos 2 y 4.
+
+### 2. Generar los certificados del backend
+
+En la carpeta `backend` del material común, con la versión de `generar_certificado.sh` del material de P3.2. Se ejecuta en Git Bash, WSL, Linux o macOS, **no en PowerShell**:
 
 ```bash
-python3 servidor.py
+EXTRA=TU_IP ./generar_certificado.sh
 ```
 
-## Ejecución de FichIN
+Genera `ca.pem` (autoridad del laboratorio), `cert.pem` (certificado del servidor), `cert_reserva.pem` (certificado de reserva) y `clave.pem`, e imprime los dos resúmenes SHA-256 de clave pública (actual y reserva).
 
-1. Clonar este repositorio.
-2. Abrir el proyecto con Android Studio.
-3. Esperar a que finalice la sincronización de Gradle.
-4. Iniciar el backend común de la asignatura.
-5. Iniciar un emulador Android.
-6. Si la aplicación está configurada para utilizar `http://localhost:8080/`, ejecutar:
+> `clave.pem` es la clave privada del servidor: **nunca se sube al repositorio**.
+
+### 3. Arrancar el backend en modo TLS
+
+Desde la carpeta `backend`:
+
+```powershell
+# Windows (PowerShell)
+$env:PUERTO=8443; $env:CERT="cert.pem"; $env:CLAVE="clave.pem"; py servidor.py
+```
 
 ```bash
-adb reverse tcp:8080 tcp:8080
+# macOS / Linux
+PUERTO=8443 CERT=cert.pem CLAVE=clave.pem python3 servidor.py
 ```
 
-7. Ejecutar la aplicación desde Android Studio.
+Comprobación: `curl --cacert cert.pem https://TU_IP:8443/api/salud` (en Windows, `curl.exe`).
+
+### 4. Adaptar la aplicación a vuestro entorno
+
+El repositorio lleva los valores de la persona que hizo la integración. Cada miembro tiene que cambiar en local:
+
+| Fichero | Qué cambiar |
+| --- | --- |
+| `app/src/main/java/es/uma/fichin/datos/ApiServicio.kt` | `BASE_URL = "https://TU_IP:8443/"` |
+| `app/src/main/res/xml/network_security_config.xml` | La IP en `<domain>` y los dos `<pin>` |
+| `app/src/debug/res/xml/network_security_config.xml` | Lo mismo que el anterior |
+| `app/src/debug/res/raw/cert_laboratorio.pem` | Sustituirlo por vuestro `ca.pem` |
+
+Estos cambios son de vuestro entorno: **no los subáis** en vuestros commits.
+
+### 5. Ejecutar FichIN
+
+1. Iniciar el emulador.
+2. Comprobar que no queda ni proxy ni reenvío de puertos de prácticas anteriores:
+   ```bash
+   adb reverse --remove-all
+   adb shell settings put global http_proxy :0
+   ```
+3. Ejecutar la variante **debug** desde Android Studio.
+
+## Seguridad en tránsito
+
+| Elemento | Dónde | Qué hace |
+| --- | --- | --- |
+| Tráfico en claro prohibido | `src/main/res/xml/network_security_config.xml` (`base-config`) | Ninguna conexión HTTP sin cifrar, tampoco de bibliotecas de terceros |
+| Anclaje de certificados | Mismo fichero (`domain-config` + `pin-set`) | Solo se acepta la clave pública del servidor actual o la de reserva. Caduca el **2026-12-31** |
+| Excepciones del laboratorio | `src/debug/res/xml/network_security_config.xml` (`debug-overrides`) y `src/debug/res/raw/cert_laboratorio.pem` | CA del laboratorio y almacén del usuario. **Solo en debug** |
+
+- La variante **release** no contiene el certificado del laboratorio ni el bloque `debug-overrides`. Se ha comprobado con *Analyze APK*.
+- En **debug**, `debug-overrides` desactiva el anclaje para las cadenas que terminan en esas anclas. Por eso un proxy puede interceptar mientras se depura. Es lo esperado.
+- La release no confía en la CA del laboratorio, así que contra el backend del laboratorio no conecta. En producción el servidor tendría un certificado de una CA pública.
+- **Antes del 2026-12-31**, o si se regeneran los certificados, hay que actualizar los pins y la caducidad siguiendo el procedimiento de rotación del documento de diseño.
+
+**Pendiente conocido:** la variante release se cierra al arrancar (`IllegalAccessError`) por la configuración de optimización R8 (`packageScope` en `app/build.gradle.kts`). No está relacionado con la configuración de red.
 
 ## Usuarios de prueba
 
