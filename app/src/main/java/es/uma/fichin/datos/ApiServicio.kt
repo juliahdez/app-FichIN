@@ -64,7 +64,7 @@ object ClienteRed {
      * recupera decompilándolo, tal como comprobaste en la práctica P2.1.
      * ¿Es eso un problema? ¿Y si en lugar de una dirección fuera una clave?
      */
-    const val BASE_URL = "http://192.168.1.96:8080/"
+    const val BASE_URL = "https://192.168.1.96:8443/"
 
     fun crear(): ApiServicio {
 
