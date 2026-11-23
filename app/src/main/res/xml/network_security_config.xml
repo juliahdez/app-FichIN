@@ -1,14 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Paso 2 - Prohibir el trafico sin cifrar.
-     Va en: app/src/main/res/xml/network_security_config.xml -->
+<!-- Paso 4 - Confiar en el certificado del laboratorio.
+     Sustituye al fichero del paso 2. -->
 <network-security-config>
 
-    <!-- Se aplica a TODO el trafico de la aplicacion, incluido el de las
-         bibliotecas de terceros. No hay ningun punto de llamada que olvidar. -->
     <base-config cleartextTrafficPermitted="false">
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>
     </base-config>
+
+    <!-- Excepciones SOLO para el backend del laboratorio.
+         Aviso de sintaxis: las anclas de un <domain-config> SUSTITUYEN a las
+         heredadas, no se suman. Dentro de este bloque solo vale lo que este
+         escrito aqui. -->
+    <domain-config>
+        <!-- TU_IP: la IP de vuestro ordenador en la red local.
+             Ver preparacion/quitar_adb_reverse.txt -->
+        <domain includeSubdomains="true">192.168.1.96</domain>
+        <trust-anchors>
+
+            <!-- Para que la aplicacion acepte el backend del laboratorio,
+                 cuyo certificado es autofirmado. -->
+            <certificates src="@raw/cert_laboratorio" />
+
+            <!-- Para que el proxy pueda seguir interceptando. Se abre a
+                 proposito: sin esto, el paso 6 no demostraria nada, porque
+                 la conexion fallaria por falta de confianza y no por el
+                 anclaje. -->
+            <certificates src="user" />
+
+        </trust-anchors>
+    </domain-config>
 
 </network-security-config>
