@@ -11,13 +11,15 @@ import retrofit2.http.*
 
 /* ==========================================================================
    EL ACCESO AL BACKEND
-   Teoría: sesión 2.5.5 (red) y 2.4.5 (corrutinas).
+   Teoría: sesiones 2.5.5 (red), 2.4.5 (corrutinas) y 3.5 (comunicaciones
+   seguras).
 
-   AVISO: el backend sirve por HTTP SIN CIFRAR. Es deliberado: en la práctica
-   P3.2 interceptarás este tráfico con un proxy y después aplicarás TLS y
-   anclaje de certificados para ver la diferencia con tus propios ojos.
+   Desde P3.2 el backend se sirve SOLO por HTTPS (puerto 8443). La política
+   de red está declarada en res/xml/network_security_config.xml: prohíbe el
+   tráfico en claro y ancla la clave pública del servidor (pin-set con pin de
+   reserva y caducidad). Las excepciones del laboratorio (CA propia y almacén
+   del usuario) existen SÓLO en la variante debug, en src/debug/res.
    ========================================================================== */
-
 /**
  * La interfaz describe la API: una función por endpoint. Retrofit genera en
  * tiempo de ejecución la clase que hace las peticiones de verdad, así que aquí
@@ -52,19 +54,19 @@ interface ApiServicio {
 object ClienteRed {
 
     /**
-     * Dirección del backend.
+     * Dirección del backend, por HTTPS.
      *
-     *   Emulador de Android            http://10.0.2.2:8080/
-     *   Dispositivo físico en tu red   http://<IP_de_tu_ordenador>:8080/
-     *
-     * El emulador tiene su propia interfaz de red: dentro de él, localhost es
-     * el propio emulador y no tu ordenador. De ahí el 10.0.2.2.
+     * Es la IP del ordenador en la red local, no 10.0.2.2 ni localhost:
+     * tiene que significar lo mismo para el emulador y para el proxy de
+     * intercepción de P3.2. Cada miembro pone aquí SU IP, la misma que en
+     * <domain> de los dos network_security_config.xml y la que se pasa en
+     * EXTRA= al generar los certificados del backend.
      *
      * PARA EL CUADERNO: esta dirección queda escrita en el artefacto y se
      * recupera decompilándolo, tal como comprobaste en la práctica P2.1.
      * ¿Es eso un problema? ¿Y si en lugar de una dirección fuera una clave?
      */
-    const val BASE_URL = "http://localhost:8080/"
+    const val BASE_URL = "https://192.168.1.96:8443/"
 
     fun crear(): ApiServicio {
 
@@ -86,8 +88,9 @@ object ClienteRed {
 
         /*
          * El cliente HTTP se construye UNA VEZ y lo hereda toda la aplicación.
-         * Es la idea de la sesión 2.5.4: cuando en P3.2 se añada el anclaje de
-         * certificados se tocará sólo aquí, y ninguna pantalla se entera.
+         * En P3.2 el anclaje de certificados se ha hecho de forma declarativa,
+         * en network_security_config.xml, y no en este cliente: la política
+         * se aplica a todo el proceso y se audita leyendo un solo fichero.
          */
         val cliente = OkHttpClient.Builder()
             .addInterceptor(registro)
