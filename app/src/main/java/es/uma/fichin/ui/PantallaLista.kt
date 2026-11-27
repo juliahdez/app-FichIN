@@ -50,72 +50,140 @@ fun PantallaLista(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mis fichajes") },
+                title = { Text("FichIN") },
                 actions = {
-                    TextButton(onClick = onRecargar) { Text("Recargar") }
-                    TextButton(onClick = onSalir) { Text("Salir") }
+                    TextButton(onClick = onRecargar) {
+                        Text("Actualizar")
+                    }
+                    TextButton(onClick = onSalir) {
+                        Text("Salir")
+                    }
                 }
             )
         }
-    ) { relleno: PaddingValues ->
-        Column(modifier = Modifier.fillMaxSize().padding(relleno)) {
-            Button(
-                onClick = {
-                    lanzador.launch(
-                        arrayOf(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                        )
-                    )
-                },
-                modifier = Modifier.padding(horizontal = 16.dp)
+    ) { relleno ->
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(relleno)
+        ) {
+
+            // Estado de la jornada y preparación de ubicación
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
             ) {
-                Text(if (concedido) "Ubicación concedida" else "Conceder ubicación")
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        "Jornada laboral",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Text(
+                        if (concedido)
+                            "La ubicación está disponible para registrar un fichaje."
+                        else
+                            "Para registrar un fichaje será necesario permitir el acceso a la ubicación.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+
+                    if (!concedido) {
+                        Button(
+                            onClick = {
+                                lanzador.launch(
+                                    arrayOf(
+                                        Manifest.permission.ACCESS_FINE_LOCATION,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION
+                                    )
+                                )
+                            }
+                        ) {
+                            Text("Activar ubicación")
+                        }
+                    } else {
+                        Text(
+                            "✓ Ubicación preparada",
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
+                }
             }
-            if (!concedido) {
-                Text(
-                    "Sin este permiso no se puede registrar la ubicación del fichaje. " +
-                            "El resto de la aplicación sigue funcionando.",
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    style = MaterialTheme.typography.bodySmall
+
+            Text(
+                "Historial de fichajes",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(
+                    start = 16.dp,
+                    end = 16.dp,
+                    bottom = 8.dp
                 )
-            }
+            )
+
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 when (estado) {
-                    is EstadoUi.Reposo -> Text("Pulsa Recargar para cargar los datos")
-                    is EstadoUi.Cargando -> CircularProgressIndicator()
-                    is EstadoUi.Error -> Text("No se han podido cargar los elementos")
-                    is EstadoUi.Exito -> LazyColumn(
-                        modifier = Modifier.fillMaxSize().padding(16.dp)
-                    ) {
-                        items(estado.datos) { elemento ->
-                            Card(
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
-                                    .clickable { onAbrir(elemento.id) }) {
-                                Column(Modifier.padding(16.dp)) {
-                                    Text(
-                                        elemento.titulo,
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
-                                    Spacer(Modifier.height(4.dp))
-                                    Text(
-                                        elemento.contenido,
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                    Spacer(Modifier.height(4.dp))
-                                    Text(
-                                        elemento.fecha,
-                                        style = MaterialTheme.typography.labelSmall
-                                    )
+
+                    is EstadoUi.Reposo ->
+                        Text("Pulsa Actualizar para cargar los fichajes")
+
+                    is EstadoUi.Cargando ->
+                        CircularProgressIndicator()
+
+                    is EstadoUi.Error ->
+                        Text("No se han podido cargar los fichajes")
+
+                    is EstadoUi.Exito ->
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp)
+                        ) {
+                            items(estado.datos) { fichaje ->
+
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 6.dp)
+                                        .clickable {
+                                            onAbrir(fichaje.id)
+                                        }
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(16.dp)
+                                    ) {
+                                        Text(
+                                            fichaje.titulo,
+                                            style = MaterialTheme.typography.titleMedium
+                                        )
+
+                                        Spacer(Modifier.height(4.dp))
+
+                                        Text(
+                                            fichaje.contenido,
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+
+                                        Spacer(Modifier.height(6.dp))
+
+                                        Text(
+                                            fichaje.fecha,
+                                            style = MaterialTheme.typography.labelSmall
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
                 }
             }
         }
-    }
-}
+    }}

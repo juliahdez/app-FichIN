@@ -115,7 +115,18 @@ class Repositorio(
                         )
                     }
                 )
-                EstadoUi.Exito(respuesta.elementos)
+                val datosLocales = dao.obtenerDe(propietario)
+
+                EstadoUi.Exito(
+                    datosLocales.map { fila ->
+                        Fichaje(
+                            fila.id,
+                            fila.titulo,
+                            fila.contenido,
+                            fila.fecha
+                        )
+                    }
+                )
 
             } catch (e: Exception) {
                 /*

@@ -92,11 +92,38 @@ fun PantallaDetalle(
                 is EstadoUi.Exito -> Column(
                     modifier = Modifier.fillMaxSize().padding(24.dp)
                 ) {
-                    Text(estado.datos.titulo, style = MaterialTheme.typography.titleLarge)
-                    Spacer(Modifier.height(12.dp))
-                    Text(estado.datos.contenido, style = MaterialTheme.typography.bodyLarge)
-                    Spacer(Modifier.height(12.dp))
-                    Text(estado.datos.fecha, style = MaterialTheme.typography.labelMedium)
+                    Text(
+                        estado.datos.titulo,
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+
+                    Spacer(Modifier.height(24.dp))
+
+                    Text(
+                        "Detalles",
+                        style = MaterialTheme.typography.labelLarge
+                    )
+
+                    Spacer(Modifier.height(4.dp))
+
+                    Text(
+                        estado.datos.contenido,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+
+                    Spacer(Modifier.height(24.dp))
+
+                    Text(
+                        "Fecha",
+                        style = MaterialTheme.typography.labelLarge
+                    )
+
+                    Spacer(Modifier.height(4.dp))
+
+                    Text(
+                        estado.datos.fecha,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 }
             }
         }
