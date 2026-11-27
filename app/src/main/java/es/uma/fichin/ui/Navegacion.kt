@@ -26,6 +26,8 @@ fun Navegacion(vistaModelo: VistaModelo, hayDeSesion: Boolean = false) {
     val estadoLogin by vistaModelo.estadoLogin.collectAsState()
     val estadoLista by vistaModelo.estadoLista.collectAsState()
     val estadoDetalle by vistaModelo.estadoDetalle.collectAsState()
+    val estadoRegistro by vistaModelo.estadoRegistro.collectAsState()
+    val nombreEmpleado by vistaModelo.nombreEmpleado.collectAsState()
 
     NavHost(navController = navController, startDestination = inicio) {
 
@@ -51,7 +53,13 @@ fun Navegacion(vistaModelo: VistaModelo, hayDeSesion: Boolean = false) {
                         popUpTo("lista") { inclusive = true }
                     }
                 },
-                onAbrir = { identificador -> navController.navigate("detalle/$identificador") }
+                onAbrir = { identificador -> navController.navigate("detalle/$identificador") },
+                estadoRegistro = estadoRegistro,
+                onFichar = { tipo, latitud, longitud ->
+                    vistaModelo.registrarFichaje(tipo, latitud, longitud)
+                },
+                nombreEmpleado = nombreEmpleado,
+                onCargarPerfil = { vistaModelo.cargarPerfil() },
             )
         }
 

@@ -41,6 +41,12 @@ interface ApiServicio {
     @GET("api/elementos")
     suspend fun fichajes(@Header("Authorization") autorizacion: String): RespuestaElementos
 
+    @POST("api/elementos")
+    suspend fun registrarFichaje(
+        @Header("Authorization") autorizacion: String,
+        @Body peticion: PeticionFichaje
+    ): Fichaje
+
     @GET("api/elementos/{id}")
     suspend fun fichaje(
         @Header("Authorization") autorizacion: String,

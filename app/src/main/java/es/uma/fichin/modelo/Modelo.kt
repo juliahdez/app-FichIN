@@ -52,6 +52,14 @@ data class Fichaje(
     val fecha: String = ""
 )
 
+@Serializable
+data class PeticionFichaje(
+    val tipo: String,
+    val latitud: Double,
+    val longitud: Double
+)
+
+
 /** Envoltorio de la respuesta de GET /api/elementos */
 @Serializable
 data class RespuestaElementos(

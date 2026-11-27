@@ -100,7 +100,7 @@ fun PantallaDetalle(
                     Spacer(Modifier.height(24.dp))
 
                     Text(
-                        "Detalles",
+                        "Ubicación",
                         style = MaterialTheme.typography.labelLarge
                     )
 
@@ -121,7 +121,7 @@ fun PantallaDetalle(
                     Spacer(Modifier.height(4.dp))
 
                     Text(
-                        estado.datos.fecha,
+                        formatearFechaFichaje(estado.datos.fecha),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }

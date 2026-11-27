@@ -115,18 +115,14 @@ class Repositorio(
                         )
                     }
                 )
-                val datosLocales = dao.obtenerDe(propietario)
+                EstadoUi.Exito(respuesta.elementos)
 
-                EstadoUi.Exito(
-                    datosLocales.map { fila ->
-                        Fichaje(
-                            fila.id,
-                            fila.titulo,
-                            fila.contenido,
-                            fila.fecha
-                        )
-                    }
-                )
+
+            } catch (e: HttpException) {
+                when (e.code()) {
+                    401 -> EstadoUi.Error(MotivoError.SesionCaducada)
+                    else -> EstadoUi.Error(MotivoError.Desconocido)
+                }
 
             } catch (e: Exception) {
                 /*
@@ -182,6 +178,45 @@ class Repositorio(
      * sección 5.5 de la práctica. Fíjate en qué funciones ofrece el DAO y en
      * cuáles se están llamando de verdad.
      */
+
+    suspend fun registrarFichaje(
+        tipo: String,
+        latitud: Double,
+        longitud: Double
+    ): EstadoUi<Fichaje> =
+        withContext(Dispatchers.IO) {
+
+            val token = sesion.obtenerToken()
+                ?: return@withContext EstadoUi.Error(
+                    MotivoError.SesionCaducada
+                )
+
+            try {
+                val respuesta = api.registrarFichaje(
+                    autorizacion = "Bearer $token",
+                    peticion = PeticionFichaje(
+                        tipo = tipo,
+                        latitud = latitud,
+                        longitud = longitud
+                    )
+                )
+
+                EstadoUi.Exito(respuesta)
+
+            } catch (e: HttpException) {
+                when (e.code()) {
+                    401 -> EstadoUi.Error(MotivoError.SesionCaducada)
+                    else -> EstadoUi.Error(MotivoError.Desconocido)
+                }
+
+            } catch (e: IOException) {
+                EstadoUi.Error(MotivoError.SinConexion)
+
+            } catch (e: Exception) {
+                EstadoUi.Error(MotivoError.Desconocido)
+            }
+        }
+
     suspend fun cerrarSesion() {
         withContext(Dispatchers.IO) {
             val propietario = sesion.obtenerUsuario()
