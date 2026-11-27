@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 
 /**
  * Modelo de vista de la aplicación.
@@ -31,6 +32,22 @@ class VistaModelo(private val repositorio: Repositorio) : ViewModel() {
     private val _estadoDetalle = MutableStateFlow<EstadoUi<Fichaje>>(EstadoUi.Reposo)
     val estadoDetalle: StateFlow<EstadoUi<Fichaje>> = _estadoDetalle.asStateFlow()
 
+    private val _estadoRegistro =
+        MutableStateFlow<EstadoUi<Fichaje>>(EstadoUi.Reposo)
+
+    val estadoRegistro: StateFlow<EstadoUi<Fichaje>> =
+        _estadoRegistro.asStateFlow()
+
+    private val _nombreEmpleado = MutableStateFlow<String?>(null)
+
+    val nombreEmpleado: StateFlow<String?> =
+        _nombreEmpleado.asStateFlow()
+
+    private var trabajoPerfil: Job? = null
+
+    private var cerrandoSesion = false
+
+
     fun entrar(usuario: String, clave: String) {
         viewModelScope.launch {
             _estadoLogin.value = EstadoUi.Cargando
@@ -39,9 +56,48 @@ class VistaModelo(private val repositorio: Repositorio) : ViewModel() {
     }
 
     fun cargarFichajes() {
+        if (cerrandoSesion) return
         viewModelScope.launch {
             _estadoLista.value = EstadoUi.Cargando
             _estadoLista.value = repositorio.obtenerFichajes()
+        }
+    }
+
+    fun cargarPerfil() {
+        trabajoPerfil?.cancel()
+        _nombreEmpleado.value = null
+
+        trabajoPerfil = viewModelScope.launch {
+            val resultado = repositorio.obtenerPerfil()
+
+            if (resultado is EstadoUi.Exito) {
+                _nombreEmpleado.value = resultado.datos.nombre
+            }
+        }
+    }
+
+    fun registrarFichaje(
+        tipo: String,
+        latitud: Double,
+        longitud: Double
+    ) {
+        if (_estadoRegistro.value is EstadoUi.Cargando) return
+
+        _estadoRegistro.value = EstadoUi.Cargando
+
+        viewModelScope.launch {
+            val resultado = repositorio.registrarFichaje(
+                tipo,
+                latitud,
+                longitud
+            )
+
+            if (resultado is EstadoUi.Exito) {
+                _estadoLista.value = EstadoUi.Cargando
+                _estadoLista.value = repositorio.obtenerFichajes()
+            }
+
+            _estadoRegistro.value = resultado
         }
     }
 
@@ -64,12 +120,27 @@ class VistaModelo(private val repositorio: Repositorio) : ViewModel() {
      * ¿qué otros rastros del usuario quedan en el dispositivo? Haz la lista
      * antes de seguir y compruébala en la sección 5.5.
      */
-    fun salir() {
+    fun salir(onCerrada: () -> Unit) {
+        if (cerrandoSesion) return
+        cerrandoSesion = true
+
+        trabajoPerfil?.cancel()
+        _nombreEmpleado.value = null
+        _estadoLista.value = EstadoUi.Cargando
+
         viewModelScope.launch {
-            repositorio.cerrarSesion()
-            _estadoLogin.value = EstadoUi.Reposo
-            _estadoLista.value = EstadoUi.Reposo
-            _estadoDetalle.value = EstadoUi.Reposo
+            try {
+                repositorio.cerrarSesion()
+
+                _estadoLogin.value = EstadoUi.Reposo
+                _estadoLista.value = EstadoUi.Reposo
+                _estadoDetalle.value = EstadoUi.Reposo
+                _estadoRegistro.value = EstadoUi.Reposo
+
+                onCerrada()
+            } finally {
+                cerrandoSesion = false
+            }
         }
     }
 }

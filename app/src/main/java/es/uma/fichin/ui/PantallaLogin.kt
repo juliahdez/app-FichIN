@@ -29,7 +29,25 @@ fun PantallaLogin(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Acceso", style = MaterialTheme.typography.headlineMedium)
+        Text(
+            "FichIN",
+            style = MaterialTheme.typography.headlineLarge
+        )
+
+        Spacer(Modifier.height(4.dp))
+
+        Text(
+            "Control horario",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        Text(
+            "Accede para consultar y registrar tus fichajes.",
+            style = MaterialTheme.typography.bodyMedium
+        )
+
         Spacer(Modifier.height(24.dp))
 
         OutlinedTextField(

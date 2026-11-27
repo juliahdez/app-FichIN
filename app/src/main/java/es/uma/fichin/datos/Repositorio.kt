@@ -6,6 +6,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.IOException
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.CancellationException
+import javax.net.ssl.SSLException
 
 /* ==========================================================================
    EL REPOSITORIO
@@ -90,50 +93,74 @@ class Repositorio(
     suspend fun obtenerFichajes(): EstadoUi<List<Fichaje>> =
         withContext(Dispatchers.IO) {
 
-            /*
-             * El operador ?: de la sesión 2.4.2 en su uso más típico: si no hay
-             * token se sale de la función con un estado de error. No hay !!, no
-             * hay comprobación que se pueda olvidar, y el compilador no deja
-             * continuar con un valor que podría faltar.
-             */
             val token = sesion.obtenerToken()
-                ?: return@withContext EstadoUi.Error(MotivoError.SesionCaducada)
-            val propietario = sesion.obtenerUsuario() ?: ""
+                ?: return@withContext EstadoUi.Error(
+                    MotivoError.SesionCaducada
+                )
+
+            val propietario = sesion.obtenerUsuario()
+                ?: return@withContext EstadoUi.Error(
+                    MotivoError.SesionCaducada
+                )
 
             try {
                 val respuesta = api.fichajes("Bearer $token")
 
-                // Copia local, marcada con su propietario
-                dao.guardar(
-                    respuesta.elementos.map { elemento ->
-                        ElementoEntidad(
-                            id = elemento.id,
-                            titulo = elemento.titulo,
-                            contenido = elemento.contenido,
-                            fecha = elemento.fecha,
-                            propietario = propietario
+                val elementosCifrados = respuesta.elementos.map { fichaje ->
+                    ElementoEntidad(
+                        id = fichaje.id,
+                        propietario = propietario,
+                        paquete = CriptoCache.cifrar(
+                            fichaje,
+                            propietario
                         )
-                    }
-                )
-                EstadoUi.Exito(respuesta.elementos)
-
-            } catch (e: Exception) {
-                /*
-                 * Si la red falla recurrimos a la copia local. Éste es el
-                 * motivo por el que existe la base de datos, y también el
-                 * motivo por el que los datos del usuario están en el disco del
-                 * dispositivo, sin cifrar, hasta que alguien los borre.
-                 */
-                val copiaLocal = dao.obtenerDe(propietario)
-                if (copiaLocal.isEmpty()) {
-                    EstadoUi.Error(MotivoError.SinConexion)
-                } else {
-                    EstadoUi.Exito(
-                        copiaLocal.map { fila ->
-                            Fichaje(fila.id, fila.titulo, fila.contenido, fila.fecha)
-                        }
                     )
                 }
+
+                dao.sustituirDe(propietario, elementosCifrados)
+
+                EstadoUi.Exito(respuesta.elementos)
+
+            } catch (e: CancellationException) {
+                throw e
+
+            } catch (e: HttpException) {
+                when (e.code()) {
+                    401 -> EstadoUi.Error(MotivoError.SesionCaducada)
+                    else -> EstadoUi.Error(MotivoError.Desconocido)
+                }
+
+            } catch (e: SSLException) {
+                EstadoUi.Error(MotivoError.Desconocido)
+
+            } catch (e: IOException) {
+
+                try {
+                    val copiaLocal = dao.obtenerDe(propietario)
+
+                    if (copiaLocal.isEmpty()) {
+                        EstadoUi.Error(MotivoError.SinConexion)
+                    } else {
+                        EstadoUi.Exito(
+                            copiaLocal.map { fila ->
+                                CriptoCache.descifrar(
+                                    fila.id,
+                                    propietario,
+                                    fila.paquete
+                                )
+                            }
+                        )
+                    }
+
+                } catch (e: CancellationException) {
+                    throw e
+
+                } catch (e: Exception) {
+                    EstadoUi.Error(MotivoError.Desconocido)
+                }
+
+            } catch (e: Exception) {
+                EstadoUi.Error(MotivoError.Desconocido)
             }
         }
 
@@ -171,13 +198,71 @@ class Repositorio(
      * sección 5.5 de la práctica. Fíjate en qué funciones ofrece el DAO y en
      * cuáles se están llamando de verdad.
      */
+
+    suspend fun registrarFichaje(
+        tipo: String,
+        latitud: Double,
+        longitud: Double
+    ): EstadoUi<Fichaje> =
+        withContext(Dispatchers.IO) {
+
+            val token = sesion.obtenerToken()
+                ?: return@withContext EstadoUi.Error(
+                    MotivoError.SesionCaducada
+                )
+
+            try {
+                val respuesta = api.registrarFichaje(
+                    autorizacion = "Bearer $token",
+                    peticion = PeticionFichaje(
+                        tipo = tipo,
+                        latitud = latitud,
+                        longitud = longitud
+                    )
+                )
+
+                EstadoUi.Exito(respuesta)
+
+            } catch (e: HttpException) {
+                when (e.code()) {
+                    401 -> EstadoUi.Error(MotivoError.SesionCaducada)
+                    else -> EstadoUi.Error(MotivoError.Desconocido)
+                }
+
+            } catch (e: IOException) {
+                EstadoUi.Error(MotivoError.SinConexion)
+
+            } catch (e: Exception) {
+                EstadoUi.Error(MotivoError.Desconocido)
+            }
+        }
+
     suspend fun cerrarSesion() {
         withContext(Dispatchers.IO) {
+            val token = sesion.obtenerToken()
             val propietario = sesion.obtenerUsuario()
-            if (propietario != null) {
-                dao.borrarDe(propietario)
+
+            try {
+                if (token != null) {
+                    withTimeoutOrNull(3000L) {
+                        try {
+                            api.revocarSesion("Bearer $token")
+                        } catch (e: IOException) {
+                            // Servidor no disponible.
+                        } catch (e: HttpException) {
+                            // Sesión ya caducada o rechazada.
+                        }
+                    }
+                }
+            } finally {
+                try {
+                    if (propietario != null) {
+                        dao.borrarDe(propietario)
+                    }
+                } finally {
+                    sesion.cerrarSesion()
+                }
             }
-            sesion.cerrarSesion()
         }
     }
 }
