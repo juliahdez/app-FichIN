@@ -12,6 +12,10 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
+import es.uma.fichin.modelo.MotivoError
 
 /**
  * Navegación entre pantallas. ESTÁ TERMINADA: no hace falta tocarla en P2.2.
@@ -28,6 +32,35 @@ fun Navegacion(vistaModelo: VistaModelo, hayDeSesion: Boolean = false) {
     val estadoDetalle by vistaModelo.estadoDetalle.collectAsState()
     val estadoRegistro by vistaModelo.estadoRegistro.collectAsState()
     val nombreEmpleado by vistaModelo.nombreEmpleado.collectAsState()
+    val contexto = LocalContext.current
+
+    val sesionCaducada = listOf(
+        estadoLista,
+        estadoDetalle,
+        estadoRegistro
+    ).any {
+        it is EstadoUi.Error &&
+                it.motivo == MotivoError.SesionCaducada
+    }
+
+    LaunchedEffect(sesionCaducada) {
+        if (sesionCaducada) {
+            Toast.makeText(
+                contexto,
+                "Tu sesión ha caducado. Vuelve a iniciar sesión.",
+                Toast.LENGTH_LONG
+            ).show()
+
+            vistaModelo.salir {
+                navController.navigate("login") {
+                    popUpTo(navController.graph.id) {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
+                }
+            }
+        }
+    }
 
     NavHost(navController = navController, startDestination = inicio) {
 
@@ -48,9 +81,12 @@ fun Navegacion(vistaModelo: VistaModelo, hayDeSesion: Boolean = false) {
                 estado = estadoLista,
                 onRecargar = { vistaModelo.cargarFichajes() },
                 onSalir = {
-                    vistaModelo.salir()
-                    navController.navigate("login") {
-                        popUpTo("lista") { inclusive = true }
+                    vistaModelo.salir {
+                        navController.navigate("login") {
+                            popUpTo("lista") {
+                                inclusive = true
+                            }
+                        }
                     }
                 },
                 onAbrir = { identificador -> navController.navigate("detalle/$identificador") },

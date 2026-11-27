@@ -45,6 +45,8 @@ class VistaModelo(private val repositorio: Repositorio) : ViewModel() {
 
     private var trabajoPerfil: Job? = null
 
+    private var cerrandoSesion = false
+
 
     fun entrar(usuario: String, clave: String) {
         viewModelScope.launch {
@@ -54,6 +56,7 @@ class VistaModelo(private val repositorio: Repositorio) : ViewModel() {
     }
 
     fun cargarFichajes() {
+        if (cerrandoSesion) return
         viewModelScope.launch {
             _estadoLista.value = EstadoUi.Cargando
             _estadoLista.value = repositorio.obtenerFichajes()
@@ -117,15 +120,27 @@ class VistaModelo(private val repositorio: Repositorio) : ViewModel() {
      * ¿qué otros rastros del usuario quedan en el dispositivo? Haz la lista
      * antes de seguir y compruébala en la sección 5.5.
      */
-    fun salir() {
+    fun salir(onCerrada: () -> Unit) {
+        if (cerrandoSesion) return
+        cerrandoSesion = true
+
+        trabajoPerfil?.cancel()
+        _nombreEmpleado.value = null
+        _estadoLista.value = EstadoUi.Cargando
+
         viewModelScope.launch {
-            repositorio.cerrarSesion()
-            _estadoLogin.value = EstadoUi.Reposo
-            _estadoLista.value = EstadoUi.Reposo
-            _estadoDetalle.value = EstadoUi.Reposo
-            _estadoRegistro.value = EstadoUi.Reposo
-            trabajoPerfil?.cancel()
-            _nombreEmpleado.value = null
+            try {
+                repositorio.cerrarSesion()
+
+                _estadoLogin.value = EstadoUi.Reposo
+                _estadoLista.value = EstadoUi.Reposo
+                _estadoDetalle.value = EstadoUi.Reposo
+                _estadoRegistro.value = EstadoUi.Reposo
+
+                onCerrada()
+            } finally {
+                cerrandoSesion = false
+            }
         }
     }
 }

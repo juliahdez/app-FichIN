@@ -53,6 +53,11 @@ interface ApiServicio {
         @Path("id") id: Int
     ): Fichaje
 
+    @POST("api/logout")
+    suspend fun revocarSesion(
+        @Header("Authorization") autorizacion: String
+    ): Unit
+
     @GET("api/perfil")
     suspend fun perfil(@Header("Authorization") autorizacion: String): Perfil
 }

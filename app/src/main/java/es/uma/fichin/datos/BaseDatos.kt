@@ -23,13 +23,14 @@ import androidx.room.*
  * nosotros para saber de qué usuario son los datos. Sin él, al entrar con otra
  * cuenta en el mismo dispositivo se verían mezclados los elementos de las dos.
  */
-@Entity(tableName = "elementos")
+@Entity(
+    tableName = "elementos",
+    primaryKeys = ["propietario", "id"]
+)
 data class ElementoEntidad(
-    @PrimaryKey val id: Int,
-    val titulo: String,
-    val contenido: String,
-    val fecha: String,
-    val propietario: String
+    val id: Int,
+    val propietario: String,
+    val paquete: String
 )
 
 /**
@@ -43,17 +44,30 @@ data class ElementoEntidad(
 @Dao
 interface FichajeDao {
 
-    /** Los elementos de un propietario, del más reciente al más antiguo. */
-    @Query("SELECT * FROM elementos WHERE propietario = :propietario ORDER BY fecha DESC")
-    suspend fun obtenerDe(propietario: String): List<ElementoEntidad>
+    @Query(
+        "SELECT * FROM elementos " +
+                "WHERE propietario = :propietario ORDER BY id DESC"
+    )
+    suspend fun obtenerDe(
+        propietario: String
+    ): List<ElementoEntidad>
 
-    /** Inserta una lista; si ya existe una fila con ese id, la reemplaza. */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun guardar(elementos: List<ElementoEntidad>)
 
-    /** Borra todo lo de un propietario. Existe; otra cosa es que alguien la llame. */
-    @Query("DELETE FROM elementos WHERE propietario = :propietario")
+    @Query(
+        "DELETE FROM elementos WHERE propietario = :propietario"
+    )
     suspend fun borrarDe(propietario: String)
+
+    @Transaction
+    suspend fun sustituirDe(
+        propietario: String,
+        elementos: List<ElementoEntidad>
+    ) {
+        borrarDe(propietario)
+        guardar(elementos)
+    }
 }
 
 @Database(entities = [ElementoEntidad::class], version = 1, exportSchema = false)
@@ -72,14 +86,24 @@ abstract class BaseDatos : RoomDatabase() {
 
         fun obtener(contexto: Context): BaseDatos =
             instancia ?: synchronized(this) {
-                instancia ?: Room.databaseBuilder(
-                    contexto.applicationContext,
-                    BaseDatos::class.java,
-                    NOMBRE_FICHERO
-                ).build().also { instancia = it }
+                instancia ?: run {
+
+                    val appContext = contexto.applicationContext
+
+                    // Retirar la antigua caché sin cifrar.
+                    appContext.deleteDatabase("appbase.db")
+
+                    Room.databaseBuilder(
+                        appContext,
+                        BaseDatos::class.java,
+                        NOMBRE_FICHERO
+                    ).build().also {
+                        instancia = it
+                    }
+                }
             }
 
         /** El fichero acaba en /data/data/<tu.paquete>/databases/appbase.db */
-        const val NOMBRE_FICHERO = "appbase.db"
+        const val NOMBRE_FICHERO = "fichin_cache.db"
     }
 }
